@@ -1,7 +1,7 @@
 # Highres Deepdream 
 
-Lots of people have complained about the size/resolution limitation of the original deepdream Caffe implementation. 
-This little python app is based directly on the [offical Google Deepdream example that comes with Tensorflow](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/deepdream/deepdream.ipynb) by Alex Mordvintsev, which doesnt suffer from those limitations.
+The size/resolution limitation of the original deepdream Caffe implementation made deep dreaming large photos tricky. 
+Howver, the [offical Google Deepdream example that comes with Tensorflow](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/deepdream/deepdream.ipynb) by Alex Mordvintsev, which doesnt suffer from those limitations. It only came as a IPython notebook, so here's a little convenience app for just applying deepdream to large images. 
 
 Install Requirements:
 
