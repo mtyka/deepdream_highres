@@ -1,7 +1,6 @@
 import os
 import math
 import numpy as np
-from functools import partial
 import PIL.Image
 import tensorflow as tf
 
@@ -10,11 +9,13 @@ tf.app.flags.DEFINE_string("input", "", "Input Image (JPG)");
 tf.app.flags.DEFINE_string("output", "output", "Output prefix");
 tf.app.flags.DEFINE_string("layer", "import/mixed4c", "Layer name");
 tf.app.flags.DEFINE_integer("feature", "-1", "Individual feature");
-tf.app.flags.DEFINE_integer("cycles", "5", "How many cycles to run");
+tf.app.flags.DEFINE_integer("frames", "5", "How many frames to run");
 tf.app.flags.DEFINE_integer("octaves", "5", "How many mage octaves (scales)");
 tf.app.flags.DEFINE_integer("iterations", "10", "How many gradient iterations per octave");
 tf.app.flags.DEFINE_float("octave_scale", "1.4", "Octave scaling factor");
-tf.app.flags.DEFINE_integer("tilesize", "512", "Size of tiles. Decrease if out of GPU memory. Increase if bad utilization.");
+tf.app.flags.DEFINE_float("frame_scale", "1.0", "Frame scaling factor");
+tf.app.flags.DEFINE_boolean("frame_crop", "false", "Frame crop to original");
+tf.app.flags.DEFINE_integer("tilesize", "256", "Size of tiles. Decrease if out of GPU memory. Increase if bad utilization.");
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -104,12 +105,24 @@ def render_deepdream(t_obj, img,
     return img
 
 def main(_):
-  img = np.float32(PIL.Image.open(FLAGS.input));
+  if FLAGS.input:
+    img = np.float32(PIL.Image.open(FLAGS.input));
+  else:
+    img = np.float32(np.full((1024,1024,3), 128))
+
+  start_shape = img.shape
+
   # Make RGB if greyscale:
   if len(img.shape)==2 or img.shape[2] == 1:
     img = np.stack([img]*3, axis=2)
 
-  for i_frame in range(FLAGS.cycles):
+  for i_frame in range(FLAGS.frames):
+    if FLAGS.frame_scale > 1.0:
+      img = resize(img, np.int32(np.float32(img.shape[:2])*FLAGS.frame_scale))
+    if FLAGS.frame_crop:
+      img = img[img.shape[0]//2-start_shape[0]//2 : img.shape[0]//2-start_shape[0]//2 + start_shape[0],
+                img.shape[1]//2-start_shape[1]//2 : img.shape[1]//2-start_shape[1]//2 + start_shape[1],:]
+
     print "Cycle", i_frame, " Res:", img.shape
     t_obj = tf.square(T(FLAGS.layer))
     if FLAGS.feature >= 0:
@@ -120,7 +133,7 @@ def main(_):
         octave_scale = FLAGS.octave_scale)
     print "Saving ", i_frame
     img = np.uint8(np.clip(img, 0, 255))
-    PIL.Image.fromarray(img).save("%s_%05d.jpg"%(FLAGS.output, i_frame), "jpeg")
+    PIL.Image.fromarray(img).save("%s_%05d.jpg"%(FLAGS.output, i_frame), "jpeg", quality=98)
 
 if __name__ == "__main__":
   tf.app.run()
